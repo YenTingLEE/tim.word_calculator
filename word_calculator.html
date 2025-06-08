@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>中英文字數統計（含數字唸法）</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 16px;
+    }
+    .result {
+      margin-top: 20px;
+    }
+    ul {
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>中英文字數統計</h1>
+  <textarea id="inputText" placeholder="請輸入中英文文字和數字..."></textarea>
+  <button onclick="analyzeText()">分析字數</button>
+
+  <div class="result" id="resultArea"></div>
+
+  <script>
+    // 數字轉中文讀法
+    function numberToChinese(num) {
+      const units = ['', '十', '百', '千'];
+      const bigUnits = ['', '萬', '億', '兆'];
+      const digitChar = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+      if (num === '0') return '零';
+
+      let result = '';
+      let str = String(parseInt(num, 10));
+      let sectionCount = 0;
+
+      while (str.length > 0) {
+        let section = str.slice(-4);
+        str = str.slice(0, -4);
+
+        let sectionStr = '';
+        let zeroFlag = false;
+
+        for (let i = 0; i < section.length; i++) {
+          const digit = parseInt(section[section.length - 1 - i], 10);
+          if (digit === 0) {
+            if (!zeroFlag && sectionStr.length > 0) {
+              sectionStr = '零' + sectionStr;
+            }
+            zeroFlag = true;
+          } else {
+            sectionStr = digitChar[digit] + units[i] + sectionStr;
+            zeroFlag = false;
+          }
+        }
+
+        sectionStr = sectionStr.replace(/零+$/, '');
+        if (sectionStr !== '') {
+          result = sectionStr + bigUnits[sectionCount] + result;
+        }
+
+        sectionCount++;
+      }
+
+      result = result.replace(/^一十/, '十'); // 10 ~ 19 的簡寫
+      return result;
+    }
+
+    function analyzeText() {
+      const text = document.getElementById('inputText').value;
+
+      const punctuationRegex = /[。，、？！：；“”‘’「」『』—…\-—.,!?;:'"(){}\[\]]/g;
+      const chineseCharRegex = /[\u4e00-\u9fff]/g;
+      const englishWordRegex = /\b[a-zA-Z]+\b/g;
+      const numberRegex = /\b\d+(\.\d+)?\b/g;
+
+      const chineseMatches = text.match(chineseCharRegex) || [];
+      const englishMatches = text.match(englishWordRegex) || [];
+      const numberMatches = text.match(numberRegex) || [];
+
+      const textNoPunc = text.replace(punctuationRegex, '');
+      const chineseNoPunc = textNoPunc.match(chineseCharRegex) || [];
+      const englishNoPunc = textNoPunc.match(englishWordRegex) || [];
+      const numberNoPunc = textNoPunc.match(numberRegex) || [];
+
+      // 數字轉中文唸法字數
+      let numberAsChineseChars = 0;
+      numberMatches.forEach(num => {
+        const chineseStr = numberToChinese(num);
+        numberAsChineseChars += chineseStr.length;
+      });
+
+      const totalWithPunc = chineseMatches.length + englishMatches.length + numberAsChineseChars;
+      const totalWithoutPunc = chineseNoPunc.length + englishNoPunc.length + numberAsChineseChars;
+
+      const resultHTML = `
+        <h3>統計結果</h3>
+        <ul>
+          <li>中文字數（包含標點）：${chineseMatches.length}</li>
+          <li>中文字數（不含標點）：${chineseNoPunc.length}</li>
+          <li>英文單字數（包含標點）：${englishMatches.length}</li>
+          <li>英文單字數（不含標點）：${englishNoPunc.length}</li>
+          <li>數字數量：${numberMatches.length}</li>
+          <li>數字唸法總字數（轉為中文唸法）：${numberAsChineseChars}</li>
+          <li><strong>總字數（包含標點）：${totalWithPunc}</strong></li>
+          <li><strong>總字數（不含標點）：${totalWithoutPunc}</strong></li>
+        </ul>
+      `;
+
+      document.getElementById('resultArea').innerHTML = resultHTML;
+    }
+  </script>
+</body>
+</html>
